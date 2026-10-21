@@ -1,0 +1,9 @@
+.relay-home{background:#000}
+.relay-light-chapter{display:flow-root;background:#fbfbfa;color:#242823}
+.relay-dark-chapter{background:#fbfbfa;position:relative}
+.relay-dark-chapter-entry{background:#000;color:#f5f5f5;overflow:hidden;transform-origin:50% 100%}
+.relay-dark-chapter-body{display:flow-root;background:#000;color:#f5f5f5}
+.relay-dark-chapter-entry .relay-philosophy{padding-block:145px 115px}
+.relay-dark-chapter-body .relay-capability-section{padding-top:40px}
+.relay-dark-chapter-body .relay-ritual{margin-top:90px}
+@media(max-width:700px){.relay-dark-chapter-entry .relay-philosophy{padding-block:95px 75px}.relay-dark-chapter-body .relay-capability-section{padding-top:15px}.relay-dark-chapter-body .relay-ritual{margin-top:65px}}

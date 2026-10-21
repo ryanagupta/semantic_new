@@ -1,0 +1,175 @@
+x-logging: &bounded-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  relay:
+    image: relay-console:${RELAY_IMAGE_TAG:-local}
+    build:
+      context: .
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3001"
+      APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN to the public HTTPS origin}
+      BETTER_AUTH_URL: ${APP_ORIGIN:?Set APP_ORIGIN to the public HTTPS origin}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set a random Better Auth secret}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?Set a random gateway owner password}
+      SESSION_SECRET: ${SESSION_SECRET:?Set a random gateway session secret}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set a 64-character hexadecimal encryption key}
+      DATABASE_PATH: /app/data/nexus.db
+      RELAY_DATABASE_PATH: /app/data/relay.db
+      GATEWAY_INTERNAL_URL: http://127.0.0.1:3001
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set a hexadecimal Redis password}@redis:6379/0
+      TRUST_PROXY_HOPS: "1"
+      SCRAPER_ENABLED: "true"
+      SCRAPER_BROWSERLESS_URL: http://browserless:3000
+      SCRAPER_BROWSERLESS_TOKEN: ${SCRAPER_BROWSERLESS_TOKEN:?Set an internal Browserless token}
+      SCRAPER_EGRESS_PROXY_URL: http://egress:8080
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?Set an OpenRouter API key}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o}
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - nexus-data:/app/data
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+      - /app/.next/cache:size=256m,uid=1000,gid=1000,mode=0700
+    networks: [egress_net, browser_net, backend_net]
+    depends_on:
+      redis:
+        condition: service_healthy
+      browserless:
+        condition: service_healthy
+      egress:
+        condition: service_healthy
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    cpus: "1.5"
+    mem_limit: 4g
+    stop_grace_period: 35s
+    restart: unless-stopped
+    logging: *bounded-logging
+
+  browserless:
+    image: ${BROWSERLESS_IMAGE:-ghcr.io/browserless/chromium:latest}
+    environment:
+      TOKEN: ${SCRAPER_BROWSERLESS_TOKEN:?Set an internal Browserless token}
+      CONCURRENT: "10"
+      QUEUED: "10"
+      TIMEOUT: "15000"
+      HOST: 0.0.0.0
+      PORT: "3000"
+      ALLOW_FILE_PROTOCOL: "false"
+      ENABLE_DEBUGGER: "false"
+      CORS: "false"
+      HEALTH: "true"
+      MAX_CPU_PERCENT: "95"
+      MAX_MEMORY_PERCENT: "90"
+      DOWNLOAD_DIR: /tmp/browserless-downloads
+      METRICS_JSON_PATH: /tmp/browserless-metrics.json
+      XDG_CACHE_HOME: /tmp/browserless-cache
+      XDG_CONFIG_HOME: /tmp/browserless-config
+      DEBUG: "-*"
+    expose: ["3000"]
+    shm_size: 2g
+    tmpfs:
+      - /tmp:size=2g,mode=1777
+    networks: [browser_net]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/active?token='+encodeURIComponent(process.env.TOKEN),{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 512
+    cpus: "2.0"
+    mem_limit: 14g
+    stop_grace_period: 20s
+    restart: unless-stopped
+    logging: *bounded-logging
+
+  egress:
+    image: relay-console:${RELAY_IMAGE_TAG:-local}
+    build:
+      context: .
+    command: [node, dist/server/scraper/egress.js]
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "8080"
+      SCRAPER_EGRESS_PORT: "8080"
+    expose: ["8080"]
+    networks: [browser_net, egress_net]
+    healthcheck:
+      test: [CMD, node, -e, "const s=require('node:net').connect(8080,'127.0.0.1');s.setTimeout(3000);s.on('connect',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));s.on('timeout',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    cpus: "0.25"
+    mem_limit: 512m
+    stop_grace_period: 20s
+    restart: unless-stopped
+    logging: *bounded-logging
+
+  redis:
+    image: redis:7-alpine
+    user: redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set a hexadecimal Redis password}
+    command:
+      - /bin/sh
+      - -ec
+      - exec redis-server --appendonly yes --appendfsync everysec --requirepass "$$REDIS_PASSWORD" --maxmemory 512mb --maxmemory-policy noeviction
+    volumes:
+      - redis-data:/data
+    expose: ["6379"]
+    networks: [backend_net]
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    cpus: "0.25"
+    mem_limit: 1g
+    stop_grace_period: 20s
+    restart: unless-stopped
+    logging: *bounded-logging
+
+networks:
+  egress_net:
+    driver: bridge
+  browser_net:
+    driver: bridge
+    internal: true
+  backend_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  nexus-data:
+  redis-data:

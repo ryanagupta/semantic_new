@@ -1,0 +1,30 @@
+.texture-button {
+  --texture-edge-top:#f4f4f4;--texture-edge-bottom:#9a9a9a;--texture-top:#eaeaea;--texture-bottom:#cecece;--texture-text:#222222;
+  position:relative;display:inline-flex;align-items:stretch;justify-content:center;flex-shrink:0;vertical-align:middle;isolation:isolate;
+  padding:2px;border:1px solid #161616;border-radius:9999px;background:linear-gradient(180deg,var(--texture-edge-top),var(--texture-edge-bottom));
+  box-shadow:0 2px 3px #00000055,0 6px 14px #00000022,inset 0 1px 0 #ffffff30;
+  color:var(--texture-text);text-decoration:none;font-family:inherit;font-weight:600;font-size:12px;line-height:1.25;cursor:pointer;
+  transition:transform 180ms ease,box-shadow 180ms ease,filter 180ms ease;outline-offset:4px; -webkit-tap-highlight-color:transparent;
+}
+.texture-button__inner {
+  display:flex;align-items:center;justify-content:center;gap:8px;flex:1;min-width:0;min-height:35px;padding:9px 17px;border:1px solid #ffffff15;border-radius:9999px;
+  background:linear-gradient(180deg,var(--texture-top),var(--texture-bottom));box-shadow:inset 0 1px 0 #ffffff36,inset 0 -1px 0 #00000012;
+  transition:background 180ms ease,box-shadow 180ms ease;color:inherit;
+}
+.texture-button svg { flex-shrink:0; }
+.texture-button:hover:not(:disabled):not([aria-disabled=true]) {filter:brightness(1.06);box-shadow:0 2px 4px #00000066,0 8px 20px #00000033,inset 0 1px 0 #ffffff42;transform:translateY(-1px);}
+.texture-button:active:not(:disabled):not([aria-disabled=true]) {transform:translateY(1px) scale(.985);box-shadow:0 1px 2px #00000055,inset 0 1px 2px #00000033;filter:brightness(.97);}
+.texture-button:active .texture-button__inner {box-shadow:inset 0 2px 4px #00000022;}
+.texture-button:focus-visible {outline:2px solid #c3c3c3;}
+.texture-button:disabled,.texture-button[aria-disabled=true] {opacity:.45;cursor:not-allowed;filter:saturate(.5);}
+.texture-button[aria-disabled=true] {pointer-events:none;}
+.texture-accent {--texture-edge-top:#d7d7d7;--texture-edge-bottom:#646464;--texture-top:#bfbfbf;--texture-bottom:#9e9e9e;--texture-text:#222222;}
+.texture-secondary {--texture-edge-top:#626262;--texture-edge-bottom:#272727;--texture-top:#3a3a3a;--texture-bottom:#2a2a2a;--texture-text:#ebebeb;}
+.texture-destructive {--texture-edge-top:#b8b8b8;--texture-edge-bottom:#434343;--texture-top:#6d6d6d;--texture-bottom:#515151;--texture-text:#f8f8f8;}
+.texture-minimal,.texture-icon {--texture-edge-top:#4d4d4d;--texture-edge-bottom:#272727;--texture-top:#323232;--texture-bottom:#2a2a2a;--texture-text:#d7d7d7;box-shadow:0 2px 4px #00000033,inset 0 1px 0 #ffffff10;}
+.texture-sm {font-size:11px;}.texture-sm .texture-button__inner {min-height:29px;padding:6px 13px;gap:6px;}
+.texture-lg {font-size:13px;}.texture-lg .texture-button__inner {min-height:42px;padding:12px 23px;gap:10px;}
+.texture-size-icon {width:38px;height:38px;}.texture-size-icon .texture-button__inner {min-height:0;padding:6px;}
+.texture-full-width {width:100%;}
+.dash-root button.texture-button,.dash-auth button.texture-button {font-family:inherit;font-size:12px;font-weight:600;line-height:1.25;}
+@media(prefers-reduced-motion:reduce){.texture-button,.texture-button__inner{transition:none;}.texture-button:hover:not(:disabled):not([aria-disabled=true]),.texture-button:active:not(:disabled):not([aria-disabled=true]){transform:none;}}

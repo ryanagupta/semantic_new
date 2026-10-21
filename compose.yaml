@@ -1,0 +1,4 @@
+# Compatibility entry point for `docker compose up` (Compose 2.20.3+).
+# The complete deployment is maintained in docker-compose.yml.
+include:
+  - path: ./docker-compose.yml

@@ -1,0 +1,34 @@
+openapi: 3.1.0
+info:
+  title: JSONPlaceholder
+  version: 1.0.0
+servers:
+  - url: https://jsonplaceholder.typicode.com
+paths:
+  /posts:
+    get:
+      operationId: list_posts
+      summary: List public example posts
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Posts returned
+  /posts/{id}:
+    get:
+      operationId: get_post
+      summary: Read a public example post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Post returned
